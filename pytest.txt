@@ -1,0 +1,2 @@
+[pytest]
+DJANGO_SETTINGS_MODULE = cafe_management.settings

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали заказа #{{ order.id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        table { width: 50%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        a { margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>Детали заказа #{{ order.id }}</h1>
+<p><strong>Стол:</strong> {{ order.table_number }}</p>
+
+<h2>Блюда:</h2>
+<table>
+    <tr>
+        <th>Название</th>
+        <th>Цена</th>
+    </tr>
+    {% for item in order.parsed_items %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.price }} руб.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<p><strong>Общая стоимость:</strong> {{ order.total_price }} руб.</p>
+<p><strong>Статус:</strong> {{ order.status }}</p>
+
+<a href="{% url 'order_edit' order.id %}">Редактировать заказ</a> | 
+<a href="{% url 'order_delete' order.id %}">Удалить заказ</a> | 
+<a href="{% url 'order_list' %}">Назад к списку заказов</a>
+
+</body>
+</html>

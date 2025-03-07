@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Создать/Редактировать заказ</title>
+    <style>
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+<h1>{% if order %}Редактировать{% else %}Создать{% endif %} заказ</h1>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label for="id_table_number">Номер стола:</label>
+    {{ form.table_number }}
+    {% if form.table_number.errors %}
+        <p class="error">{{ form.table_number.errors.0 }}</p>
+    {% endif %}
+    <br><br>
+
+    <label for="id_items">Блюда (формат: "Хлеб - 100, Борщ - 500"):</label>
+    {{ form.items }}
+    {% if form.items.errors %}
+        <p class="error">{{ form.items.errors.0 }}</p>
+    {% endif %}
+    <br><br>
+
+    <label for="id_status">Статус:</label>
+    {{ form.status }}
+    <br><br>
+
+    <button type="submit">Сохранить</button>
+</form>
+
+<a href="{% url 'order_list' %}">Назад</a>
+
+</body>
+</html>

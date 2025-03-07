@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Выручка за смену</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        h1 { color: #333; }
+        .revenue { font-size: 24px; font-weight: bold; margin-top: 20px; }
+        a { display: inline-block; margin-top: 20px; text-decoration: none; background: #008CBA; color: white; padding: 10px 20px; border-radius: 5px; }
+        a:hover { background: #005f73; }
+    </style>
+</head>
+<body>
+    <h1>Выручка за смену</h1>
+    <p class="revenue">Общая сумма: <strong>{{ total_revenue }} ₽</strong></p>
+    <a href="{% url 'order_list' %}">Вернуться к заказам</a>
+</body>
+</html>

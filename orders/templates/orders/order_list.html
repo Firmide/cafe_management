@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Все заказы</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        form { display: inline; margin-right: 10px; }
+        .revenue-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Все заказы</h1>
+
+<!-- Кнопка для просмотра выручки -->
+<a href="{% url 'revenue_report' %}" class="revenue-btn">Посмотреть выручку</a>
+
+<!-- Форма поиска -->
+<form method="GET">
+    <input type="text" name="q" placeholder="Поиск по столу или статусу" value="{{ query }}">
+    <button type="submit">Найти</button>
+</form>
+
+<!-- Фильтр по статусу -->
+<form method="GET">
+    <select name="status" onchange="this.form.submit()">
+        <option value="">Все заказы</option>
+        <option value="в ожидании" {% if status_filter == "в ожидании" %}selected{% endif %}>В ожидании</option>
+        <option value="готово" {% if status_filter == "готово" %}selected{% endif %}>Готово</option>
+        <option value="оплачено" {% if status_filter == "оплачено" %}selected{% endif %}>Оплачено</option>
+    </select>
+    <noscript><button type="submit">Фильтровать</button></noscript> 
+</form>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Стол</th>
+        <th>Блюда</th>
+        <th>Стоимость</th>
+        <th>Статус</th>
+        <th>Действия</th>
+    </tr>
+    {% for order in orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.table_number }}</td>
+        <td>
+            {% for item in order.items_parsed %}
+                {{ item.name }} — {{ item.price }}<br>
+            {% endfor %}
+        </td>
+        <td>{{ order.total_price }}</td>
+        <td>
+            <form method="POST" action="{% url 'update_status' order.id %}">
+                {% csrf_token %}
+                <select name="status">
+                    <option value="в ожидании" {% if order.status == "в ожидании" %}selected{% endif %}>В ожидании</option>
+                    <option value="готово" {% if order.status == "готово" %}selected{% endif %}>Готово</option>
+                    <option value="оплачено" {% if order.status == "оплачено" %}selected{% endif %}>Оплачено</option>
+                </select>
+                <button type="submit">Обновить</button>
+            </form>
+        </td>
+        <td>
+            <a href="{% url 'order_detail' order.id %}">Подробнее</a> | 
+            <a href="{% url 'order_edit' order.id %}">Редактировать</a> | 
+            <a href="{% url 'order_delete' order.id %}">Удалить</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">Заказы не найдены</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'order_create' %}">Создать заказ</a>
+
+</body>
+</html>
