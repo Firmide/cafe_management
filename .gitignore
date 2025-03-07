@@ -1,0 +1,23 @@
+# .gitignore для Django-проекта
+
+# Виртуальное окружение
+venv/
+.env/
+
+# Папки с миграциями
+*.pyc
+__pycache__/
+
+# Pytest
+*.log
+
+# Базы данных SQLite
+db.sqlite3
+
+# IDE / редактор
+.vscode/
+.idea/
+
+# Другие временные файлы
+*.bak
+*.swp
