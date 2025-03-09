@@ -8,23 +8,36 @@ from rest_framework import generics
 from .serializers import OrderSerializer
 
 
+def parse_items(items_str: str) -> list:
+    """Парсинг строки с блюдами в список словарей."""
+    try:
+        return [
+            {"name": item.split("-")[0].strip(), "price": item.split("-")[1].strip()}
+            for item in items_str.split(",")
+        ]
+    except:
+        return []
+
+
 def order_list(request: HttpRequest) -> HttpResponse:
-    """Вывод списка заказов с поиском и фильтрацией по статусу."""
-    query: str = request.GET.get("q", "").strip()  # Получаем поисковый запрос
-    status_filter: str = request.GET.get("status", "").strip()  # Фильтр по статусу
+    """Вывод списка заказов с поиском, фильтрацией и парсингом блюд."""
+    query: str = request.GET.get("q", "").strip()
+    status_filter: str = request.GET.get("status", "").strip()
 
     orders: QuerySet[Order] = Order.objects.all()
 
-    # Поиск по номеру стола или статусу
     if query:
         if query.isdigit():
             orders = orders.filter(table_number=int(query))
         else:
             orders = orders.filter(status__icontains=query)
 
-    # Фильтрация по статусу
     if status_filter:
         orders = orders.filter(status=status_filter)
+
+    # Парсинг блюд для корректного отображения
+    for order in orders:
+        order.items_parsed = parse_items(order.items)
 
     return render(
         request,
@@ -49,6 +62,7 @@ def order_create(request: HttpRequest) -> HttpResponse:
 def order_detail(request: HttpRequest, order_id: int) -> HttpResponse:
     """Детали конкретного заказа."""
     order: Order = get_object_or_404(Order, id=order_id)
+    order.items_parsed = parse_items(order.items)
     return render(request, "orders/order_detail.html", {"order": order})
 
 

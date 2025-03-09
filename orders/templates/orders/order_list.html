@@ -17,22 +17,22 @@
             padding: 10px 20px;
             border-radius: 5px;
         }
+        .item-list {
+            text-align: left;
+        }
     </style>
 </head>
 <body>
 
 <h1>Все заказы</h1>
 
-<!-- Кнопка для просмотра выручки -->
 <a href="{% url 'revenue_report' %}" class="revenue-btn">Посмотреть выручку</a>
 
-<!-- Форма поиска -->
 <form method="GET">
     <input type="text" name="q" placeholder="Поиск по столу или статусу" value="{{ query }}">
     <button type="submit">Найти</button>
 </form>
 
-<!-- Фильтр по статусу -->
 <form method="GET">
     <select name="status" onchange="this.form.submit()">
         <option value="">Все заказы</option>
@@ -56,10 +56,14 @@
     <tr>
         <td>{{ order.id }}</td>
         <td>{{ order.table_number }}</td>
-        <td>
-            {% for item in order.items_parsed %}
-                {{ item.name }} — {{ item.price }}<br>
-            {% endfor %}
+        <td class="item-list">
+            {% if order.items_parsed %}
+                {% for item in order.items_parsed %}
+                    {{ item.name }} — {{ item.price }}<br>
+                {% endfor %}
+            {% else %}
+                Нет данных
+            {% endif %}
         </td>
         <td>{{ order.total_price }}</td>
         <td>
