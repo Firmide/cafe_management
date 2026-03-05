@@ -1,4 +1,4 @@
-{% extends "orders/base.html" %}
+{% extends "staff/base.html" %}
 {% load static %}
 
 {% block title %}Список заказов{% endblock %}
@@ -124,7 +124,7 @@
     <!-- Заголовок и кнопка создания -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="display-5 fw-bold">📋 Все заказы</h1>
-        <a href="{% url 'order_create' %}" class="btn btn-success btn-lg">
+        <a href="{% url 'staff:order_create' %}" class="btn btn-success btn-lg">
             ➕ Создать заказ
         </a>
     </div>
@@ -199,6 +199,7 @@
                         {% endfor %}
                     </ul>
                     {% elif order.order_items.exists %}
+                    <ul class="order-items">
                         {% for oi in order.order_items.all %}
                         <li class="order-item">
                             <span>
@@ -222,10 +223,10 @@
                     
                     <!-- Действия -->
                     <div class="order-actions">
-                        <a href="{% url 'order_detail' order.id %}" class="btn-action btn-detail">👁️ Подробнее</a>
-                        <a href="{% url 'order_edit' order.id %}" class="btn-action btn-edit">✏️ Редактировать</a>
-                        <a href="{% url 'order_delete' order.id %}" class="btn-action btn-delete" 
-                           onclick="return confirm('Удалить заказ?')">🗑️ Удалить</a>
+                        <a href="{% url 'staff:order_detail' order.id %}" class="btn-action btn-detail">👁️ Подробнее</a>
+                        <a href="{% url 'staff:order_edit' order.id %}" class="btn-action btn-edit">✏️ Редактировать</a>
+                        <a href="{% url 'staff:order_delete' order.id %}" class="btn-action btn-delete" 
+                           onclick="return confirm('Удалить заказ #{{ order.id }}?')">🗑️ Удалить</a>
                     </div>
                     
                     <!-- Если стол занят (пометка) -->
@@ -242,7 +243,7 @@
             <div class="alert alert-info text-center py-5">
                 <h3>😕 Заказов пока нет</h3>
                 <p class="mb-4">Создайте первый заказ, нажав на кнопку выше</p>
-                <a href="{% url 'order_create' %}" class="btn btn-success btn-lg">➕ Создать заказ</a>
+                <a href="{% url 'staff:order_create' %}" class="btn btn-success btn-lg">➕ Создать заказ</a>
             </div>
         </div>
         {% endfor %}

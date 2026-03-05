@@ -1,4 +1,4 @@
-{% extends "orders/base.html" %}
+{% extends "staff/base.html" %}
 {% load static %}
 
 {% block title %}Дашборд | Статистика{% endblock %}
@@ -276,7 +276,7 @@
                     <h6 class="text-muted mb-3">📋 Последние заказы</h6>
                     <div class="list-group list-group-flush">
                         {% for order in orders|slice:":5" %}
-                        <a href="{% url 'order_detail' order.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <a href="{% url 'staff:order_detail' order.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>Стол {{ order.table_number }}</strong>
                                 <br>

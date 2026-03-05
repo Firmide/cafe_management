@@ -1,4 +1,4 @@
-{% extends "orders/base.html" %}
+{% extends "staff/base.html" %}
 {% load static %}
 
 {% block title %}Заказ #{{ order.id }}{% endblock %}
@@ -359,15 +359,15 @@
         
         <!-- Кнопки действий -->
         <div class="action-buttons">
-            <a href="{% url 'order_edit' order.id %}" class="btn-action btn-edit">
+            <a href="{% url 'staff:order_edit' order.id %}" class="btn-action btn-edit">
                 ✏️ Редактировать заказ
             </a>
-            <a href="{% url 'order_delete' order.id %}" 
+            <a href="{% url 'staff:order_delete' order.id %}" 
                class="btn-action btn-delete"
                onclick="return confirm('Вы уверены, что хотите удалить заказ #{{ order.id }}?')">
                 🗑️ Удалить заказ
             </a>
-            <a href="{% url 'order_list' %}" class="btn-action btn-back">
+            <a href="{% url 'staff:order_list' %}" class="btn-action btn-back">
                 ← Назад к списку
             </a>
         </div>
@@ -375,7 +375,7 @@
         <!-- Быстрая смена статуса -->
         {% if order.status != 'оплачено' %}
         <div class="text-center mt-4">
-            <form method="post" action="{% url 'update_status' order.id %}" style="display: inline;">
+            <form method="post" action="{% url 'staff:update_status' order.id %}" style="display: inline;">
                 {% csrf_token %}
                 <div class="btn-group" role="group">
                     {% if order.status != 'в ожидании' %}

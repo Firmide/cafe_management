@@ -1,0 +1,183 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Мои заказы{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+    .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+    }
+    .loading {
+        text-align: center;
+        padding: 2rem;
+    }
+    .loading-spinner {
+        width: 3rem;
+        height: 3rem;
+        border: 0.25rem solid #f3f3f3;
+        border-top: 0.25rem solid #28a745;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .empty-history {
+        text-align: center;
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    .empty-history h3 {
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">📋 Мои заказы</h1>
+    
+    <div id="orders-container">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Загрузка истории заказов...</p>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'customer:menu' %}" class="btn btn-primary">
+            ← Вернуться в меню
+        </a>
+    </div>
+</div>
+
+<script>
+    // Загружаем историю заказов из localStorage
+    const orderHistory = JSON.parse(localStorage.getItem('order_history') || '[]');
+    const ordersContainer = document.getElementById('orders-container');
+    
+    // Функция для загрузки деталей заказа
+    async function loadOrderDetails(orderId) {
+        try {
+            const response = await fetch(`/api/order/${orderId}/`);
+            const data = await response.json();
+            return data.success ? data.order : null;
+        } catch (error) {
+            console.error('Ошибка загрузки заказа #' + orderId, error);
+            return null;
+        }
+    }
+    
+    // Функция для отображения всех заказов
+    async function displayOrders() {
+        if (orderHistory.length === 0) {
+            ordersContainer.innerHTML = `
+                <div class="empty-history">
+                    <h3>😕 У вас пока нет заказов</h3>
+                    <p class="text-muted mb-4">Сделайте свой первый заказ в нашем кафе!</p>
+                    <a href="{% url 'customer:menu' %}" class="btn btn-success btn-lg">
+                        🍽️ Перейти в меню
+                    </a>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="row">';
+        let loadedCount = 0;
+        
+        // Загружаем заказы в обратном порядке (сначала новые)
+        const reversedHistory = [...orderHistory].reverse();
+        
+        for (const orderId of reversedHistory) {
+            const order = await loadOrderDetails(orderId);
+            if (order) {
+                loadedCount++;
+                html += `
+                    <div class="col-md-6 mb-4">
+                        <div class="card order-card shadow-sm" onclick="window.location.href='/order/${order.id}/'">
+                            <div class="card-header 
+                                ${order.status === 'в ожидании' ? 'bg-warning' : 
+                                  order.status === 'готово' ? 'bg-info' : 
+                                  order.status === 'оплачено' ? 'bg-success' : ''} text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Заказ #${order.id}</h5>
+                                    <span class="badge bg-light text-dark">
+                                        ${order.created_at}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <span class="badge status-badge 
+                                        ${order.status === 'в ожидании' ? 'bg-warning text-dark' : 
+                                          order.status === 'готово' ? 'bg-info' : 
+                                          order.status === 'оплачено' ? 'bg-success' : ''}">
+                                        ${order.status_display}
+                                    </span>
+                                    <span class="ms-2 text-muted">Стол ${order.table_number}</span>
+                                </div>
+                                
+                                <h6>Состав заказа:</h6>
+                                <div class="list-group mb-3">
+                                    ${order.items.map(item => `
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                            <span>
+                                                <strong>${item.name}</strong>
+                                                <br>
+                                                <small class="text-muted">${item.quantity} x ${item.price} ₽</small>
+                                            </span>
+                                            <span class="fw-bold text-success">${item.total} ₽</span>
+                                        </div>
+                                    `).join('')}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center fw-bold">
+                                        <span>Итого:</span>
+                                        <span class="text-success">${order.total_price} ₽</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); window.location.href='/order/${order.id}/'">
+                                    👁️ Посмотреть статус
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        html += '</div>';
+        
+        if (loadedCount === 0) {
+            html = `
+                <div class="empty-history">
+                    <h3>😕 Заказы не найдены</h3>
+                    <p class="text-muted mb-4">Возможно, они были удалены из истории</p>
+                    <a href="{% url 'customer:menu' %}" class="btn btn-success btn-lg">
+                        🍽️ Перейти в меню
+                    </a>
+                </div>
+            `;
+        }
+        
+        ordersContainer.innerHTML = html;
+    }
+    
+    // Загружаем и отображаем заказы
+    displayOrders();
+</script>
+{% endblock %}

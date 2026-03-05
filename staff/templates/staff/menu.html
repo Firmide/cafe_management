@@ -1,4 +1,4 @@
-{% extends "orders/base.html" %}
+{% extends "staff/base.html" %}
 
 {% block title %}Меню кафе{% endblock %}
 
@@ -27,6 +27,9 @@
                         </div>
                         <div class="col-md-4 text-md-end">
                             <span class="h5 text-success">{{ item.price }} ₽</span>
+                            <div class="mt-2">
+                                <a href="{% url 'staff:menu_edit' %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -43,5 +46,11 @@
         Меню пока пусто. Добавьте блюда в админке.
     </div>
     {% endfor %}
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'staff:menu_edit' %}" class="btn btn-primary">
+            ✏️ Редактировать меню
+        </a>
+    </div>
 </div>
 {% endblock %}

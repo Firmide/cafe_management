@@ -38,8 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_filters',  # Добавь эту строку
-    'orders',
+    'django_filters',
+    'orders',           # Общая логика и модели
+    'staff',            # Приложение для сотрудников
+    'customer',         # Приложение для клиентов
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,261 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Меню{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cart-item {
+        transition: background-color 0.3s;
+    }
+    .cart-item:hover {
+        background-color: #f8f9fa;
+    }
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .quantity-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .quantity-btn:hover {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    .quantity-btn.minus:hover {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+    .cart-summary {
+        position: sticky;
+        top: 20px;
+    }
+    .btn-in-cart {
+        background-color: #28a745;
+        color: white;
+        border-color: #28a745;
+        cursor: default;
+    }
+    .btn-in-cart:hover {
+        background-color: #28a745;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-5">🍽️ Наше меню</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            {% for category in categories %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">{{ category.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in category.items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ item.name }}</h5>
+                                    <p class="card-text text-muted small">{{ item.description|truncatechars:50 }}</p>
+                                    <p class="card-text fw-bold text-success">{{ item.price }} ₽</p>
+                                    <button class="btn btn-sm w-100 add-to-cart" 
+                                            data-id="{{ item.id }}"
+                                            data-name="{{ item.name }}"
+                                            data-price="{{ item.price }}"
+                                            id="btn-{{ item.id }}">
+                                        Добавить в корзину
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="cart-summary">
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">🛒 Ваша корзина <span class="badge bg-light text-dark" id="cart-total-items">0</span></h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="cart-items">
+                            <p class="text-muted text-center">Корзина пуста</p>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <strong>Итого:</strong>
+                            <strong class="text-success fs-4" id="cart-total-price">0 ₽</strong>
+                        </div>
+                        <a href="{% url 'customer:order_create' %}" class="btn btn-success w-100">
+                            ✅ Оформить заказ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Загрузка корзины из localStorage
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    // Функция для обновления состояния всех кнопок
+    function updateAllButtons() {
+        // Сначала сбрасываем все кнопки
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+            btn.classList.remove('btn-success', 'btn-in-cart');
+            btn.classList.add('btn-outline-success');
+            btn.textContent = 'Добавить в корзину';
+            btn.disabled = false;
+        });
+        
+        // Отмечаем кнопки для товаров в корзине
+        cart.forEach(item => {
+            const btn = document.getElementById(`btn-${item.id}`);
+            if (btn) {
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success', 'btn-in-cart');
+                btn.textContent = '✓ В корзине';
+                btn.disabled = false; // Не блокируем, чтобы можно было добавлять еще
+            }
+        });
+    }
+    
+    // Функция сохранения корзины
+    function saveCart() {
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartDisplay();
+        updateAllButtons();
+    }
+    
+    // Функция обновления счетчика в заголовке корзины
+    function updateCartCount() {
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        document.getElementById('cart-total-items').textContent = totalItems;
+    }
+    
+    // Функция обновления отображения корзины
+    function updateCartDisplay() {
+        const cartItems = document.getElementById('cart-items');
+        const cartTotal = document.getElementById('cart-total-price');
+        
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<p class="text-muted text-center">Корзина пуста</p>';
+            cartTotal.textContent = '0 ₽';
+            updateCartCount();
+            return;
+        }
+        
+        let html = '';
+        let total = 0;
+        
+        cart.forEach((item, index) => {
+            total += item.price * item.quantity;
+            html += `
+                <div class="cart-item d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
+                    <div class="flex-grow-1">
+                        <strong>${item.name}</strong>
+                        <br>
+                        <small class="text-muted">${item.price} ₽</small>
+                        
+                        <div class="quantity-control mt-2">
+                            <button class="quantity-btn minus" onclick="decrementQuantity(${index})">−</button>
+                            <span class="mx-2 fw-bold">${item.quantity}</span>
+                            <button class="quantity-btn plus" onclick="incrementQuantity(${index})">+</button>
+                            <button class="btn btn-sm btn-link text-danger ms-2" onclick="removeItem(${index})">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="fw-bold text-success">
+                        ${item.price * item.quantity} ₽
+                    </div>
+                </div>
+            `;
+        });
+        
+        cartItems.innerHTML = html;
+        cartTotal.textContent = total + ' ₽';
+        updateCartCount();
+    }
+    
+    // Увеличение количества
+    window.incrementQuantity = function(index) {
+        cart[index].quantity += 1;
+        saveCart();
+    };
+    
+    // Уменьшение количества
+    window.decrementQuantity = function(index) {
+        if (cart[index].quantity > 1) {
+            cart[index].quantity -= 1;
+        } else {
+            // Если количество станет 0, удаляем товар
+            cart.splice(index, 1);
+        }
+        saveCart();
+    };
+    
+    // Удаление товара
+    window.removeItem = function(index) {
+        cart.splice(index, 1);
+        saveCart();
+    };
+    
+    // Добавление в корзину
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const price = parseFloat(this.dataset.price);
+            
+            // Проверяем, есть ли уже такое блюдо
+            const existingItem = cart.find(item => item.id === id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: id,
+                    name: name,
+                    price: price,
+                    quantity: 1
+                });
+            }
+            
+            saveCart();
+            
+            // Подсветка кнопки (будет обновлена в updateAllButtons)
+            this.classList.remove('btn-outline-success');
+            this.classList.add('btn-success', 'btn-in-cart');
+            this.textContent = '✓ В корзине';
+        });
+    });
+    
+    // Обновляем отображение при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCartDisplay();
+        updateAllButtons();
+    });
+</script>
+{% endblock %}

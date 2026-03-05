@@ -1,0 +1,109 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Статус заказа #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header 
+                    {% if order.status == 'в ожидании' %}bg-warning
+                    {% elif order.status == 'готово' %}bg-info
+                    {% elif order.status == 'оплачено' %}bg-success
+                    {% endif %} text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">🍽️ Заказ #{{ order.id }}</h4>
+                        <span class="badge bg-light text-dark">
+                            Стол {{ order.table_number }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body text-center">
+                    
+                    <div class="mb-4">
+                        <h1 class="display-1">
+                            {% if order.status == 'в ожидании' %}⏳
+                            {% elif order.status == 'готово' %}✅
+                            {% elif order.status == 'оплачено' %}💰
+                            {% endif %}
+                        </h1>
+                        
+                        <h2 class="
+                            {% if order.status == 'в ожидании' %}text-warning
+                            {% elif order.status == 'готово' %}text-info
+                            {% elif order.status == 'оплачено' %}text-success
+                            {% endif %}">
+                            {{ order.get_status_display }}
+                        </h2>
+                        
+                        <p class="text-muted mt-2">
+                            Заказ создан: {{ order.created_at|date:"d.m.Y H:i" }}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>🍲 Состав заказа:</h5>
+                        <div class="list-group">
+                            {% for item in order.order_items.all %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="text-start">
+                                    <strong>{{ item.item.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ item.quantity }} x {{ item.item.price }} ₽</small>
+                                </div>
+                                <span class="fw-bold text-success">{{ item.total_price }} ₽</span>
+                            </div>
+                            {% endfor %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center fw-bold">
+                                <span>Итого:</span>
+                                <span class="text-success">{{ order.total_price }} ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'customer:menu' %}" class="btn btn-primary">
+                            ← Вернуться в меню
+                        </a>
+                        <a href="{% url 'customer:my_orders' %}" class="btn btn-outline-secondary">
+                            📋 Мои заказы
+                        </a>
+                        <button class="btn btn-outline-success" onclick="location.reload()">
+                            🔄 Обновить статус
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Очищаем корзину при загрузке страницы статуса
+    if (localStorage.getItem('cart')) {
+        localStorage.removeItem('cart');
+        console.log('Корзина очищена после оформления заказа');
+    }
+    
+    // Сохраняем заказ в историю
+    function saveOrderToHistory(orderId) {
+        let history = JSON.parse(localStorage.getItem('order_history') || '[]');
+        
+        // Проверяем, есть ли уже такой заказ в истории
+        if (!history.includes(orderId)) {
+            history.push(orderId);
+            localStorage.setItem('order_history', JSON.stringify(history));
+            console.log('Заказ #' + orderId + ' сохранен в историю');
+        }
+    }
+    
+    // Сохраняем текущий заказ
+    saveOrderToHistory({{ order.id }});
+    
+    // Автообновление каждые 10 секунд
+    setTimeout(function() {
+        location.reload();
+    }, 10000);
+</script>
+{% endblock %}
