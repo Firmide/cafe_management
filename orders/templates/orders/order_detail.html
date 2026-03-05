@@ -1,42 +1,402 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Детали заказа #{{ order.id }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        table { width: 50%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        a { margin-right: 10px; }
-    </style>
-</head>
-<body>
+{% extends "orders/base.html" %}
+{% load static %}
 
-<h1>Детали заказа #{{ order.id }}</h1>
-<p><strong>Стол:</strong> {{ order.table_number }}</p>
+{% block title %}Заказ #{{ order.id }}{% endblock %}
 
-<h2>Блюда:</h2>
-<table>
-    <tr>
-        <th>Название</th>
-        <th>Цена</th>
-    </tr>
-    {% for item in order.parsed_items %}
-    <tr>
-        <td>{{ item.name }}</td>
-        <td>{{ item.price }} руб.</td>
-    </tr>
-    {% endfor %}
-</table>
+{% block extra_css %}
+<style>
+    .order-detail-card {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .order-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        position: relative;
+    }
+    
+    .order-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .table-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 10px 20px;
+        border-radius: 50px;
+        display: inline-block;
+        font-size: 1.2rem;
+    }
+    
+    .status-badge {
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        display: inline-block;
+    }
+    
+    .status-waiting {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .status-ready {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .status-paid {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .info-section {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        margin-top: -30px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .items-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+    
+    .items-table th {
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        padding: 10px 15px;
+    }
+    
+    .items-table td {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    
+    .items-table tr:hover td {
+        background: #e9ecef;
+        transition: background 0.3s;
+    }
+    
+    .item-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .item-quantity {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+    
+    .item-price {
+        font-weight: 600;
+        color: #28a745;
+        font-size: 1.1rem;
+    }
+    
+    .total-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+        margin-top: 20px;
+        text-align: right;
+    }
+    
+    .total-label {
+        font-size: 1.2rem;
+        color: #6c757d;
+        margin-right: 20px;
+    }
+    
+    .total-amount {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .btn-action {
+        padding: 12px 30px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        color: white;
+    }
+    
+    .btn-delete {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .btn-back {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        color: white;
+    }
+    
+    .history-section {
+        margin-top: 40px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .history-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .history-item:last-child {
+        border-bottom: none;
+    }
+    
+    .history-time {
+        min-width: 150px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .history-status {
+        margin: 0 20px;
+    }
+    
+    .history-comment {
+        color: #495057;
+        font-style: italic;
+    }
+    
+    @media (max-width: 768px) {
+        .order-header h1 {
+            font-size: 2rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-action {
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
 
-<p><strong>Общая стоимость:</strong> {{ order.total_price }} руб.</p>
-<p><strong>Статус:</strong> {{ order.status }}</p>
-
-<a href="{% url 'order_edit' order.id %}">Редактировать заказ</a> | 
-<a href="{% url 'order_delete' order.id %}">Удалить заказ</a> | 
-<a href="{% url 'order_list' %}">Назад к списку заказов</a>
-
-</body>
-</html>
+{% block content %}
+<div class="container">
+    <div class="order-detail-card">
+        <!-- Шапка заказа -->
+        <div class="order-header">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <h1>🍽️ Заказ #{{ order.id }}</h1>
+                    <div class="table-badge">
+                        <span class="me-2">📍</span> Стол {{ order.table_number }}
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge 
+                        {% if order.status == 'в ожидании' %}status-waiting
+                        {% elif order.status == 'готово' %}status-ready
+                        {% elif order.status == 'оплачено' %}status-paid
+                        {% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Основная информация -->
+        <div class="info-section">
+            <h3 class="mb-4">🍲 Состав заказа</h3>
+            
+            {% if order.order_items.exists %}
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Блюдо</th>
+                            <th>Количество</th>
+                            <th>Цена</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.order_items.all %}
+                        <tr>
+                            <td>
+                                <span class="item-name">{{ item.item.name }}</span>
+                                {% if item.item.description %}
+                                    <br><small class="text-muted">{{ item.item.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantity }} шт.</td>
+                            <td>{{ item.item.price }} ₽</td>
+                            <td class="item-price">{{ item.total_price }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif order.items %}
+                <!-- Старый формат заказа -->
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Блюдо</th>
+                            <th>Цена</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.parsed_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.price }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="alert alert-warning mt-3">
+                    <small>⚠️ Это старый формат заказа</small>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    В заказе нет блюд
+                </div>
+            {% endif %}
+            
+            <!-- Общая стоимость -->
+            <div class="total-section">
+                <span class="total-label">Итого:</span>
+                <span class="total-amount">{{ order.total_price }} ₽</span>
+            </div>
+            
+            <!-- Дополнительная информация -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="text-muted small">Создан</div>
+                    <div>{{ order.created_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Обновлен</div>
+                    <div>{{ order.updated_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Оплачен</div>
+                    <div>
+                        {% if order.paid_at %}
+                            {{ order.paid_at|date:"d.m.Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- История изменений -->
+        {% if order.history.exists %}
+        <div class="history-section">
+            <h4 class="mb-3">📜 История изменений</h4>
+            {% for record in order.history.all %}
+            <div class="history-item">
+                <div class="history-time">
+                    {{ record.changed_at|date:"d.m.Y H:i" }}
+                </div>
+                <div class="history-status">
+                    <span class="badge 
+                        {% if record.status == 'в ожидании' %}bg-warning text-dark
+                        {% elif record.status == 'готово' %}bg-info
+                        {% elif record.status == 'оплачено' %}bg-success
+                        {% endif %}">
+                        {{ record.get_status_display }}
+                    </span>
+                </div>
+                <div class="history-comment flex-grow-1">
+                    {% if record.comment %}
+                        {{ record.comment }}
+                    {% endif %}
+                </div>
+                {% if record.changed_by %}
+                <div class="text-muted small ms-2">
+                    ({{ record.changed_by }})
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Кнопки действий -->
+        <div class="action-buttons">
+            <a href="{% url 'order_edit' order.id %}" class="btn-action btn-edit">
+                ✏️ Редактировать заказ
+            </a>
+            <a href="{% url 'order_delete' order.id %}" 
+               class="btn-action btn-delete"
+               onclick="return confirm('Вы уверены, что хотите удалить заказ #{{ order.id }}?')">
+                🗑️ Удалить заказ
+            </a>
+            <a href="{% url 'order_list' %}" class="btn-action btn-back">
+                ← Назад к списку
+            </a>
+        </div>
+        
+        <!-- Быстрая смена статуса -->
+        {% if order.status != 'оплачено' %}
+        <div class="text-center mt-4">
+            <form method="post" action="{% url 'update_status' order.id %}" style="display: inline;">
+                {% csrf_token %}
+                <div class="btn-group" role="group">
+                    {% if order.status != 'в ожидании' %}
+                    <button type="submit" name="status" value="в ожидании" class="btn btn-outline-warning">
+                        ⏳ В ожидании
+                    </button>
+                    {% endif %}
+                    {% if order.status != 'готово' %}
+                    <button type="submit" name="status" value="готово" class="btn btn-outline-info">
+                        ✅ Готово
+                    </button>
+                    {% endif %}
+                    {% if order.status != 'оплачено' %}
+                    <button type="submit" name="status" value="оплачено" class="btn btn-outline-success">
+                        💵 Оплачено
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

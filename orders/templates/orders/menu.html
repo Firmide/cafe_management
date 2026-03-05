@@ -1,0 +1,47 @@
+{% extends "orders/base.html" %}
+
+{% block title %}Меню кафе{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-5">🍽️ Наше меню</h1>
+    
+    {% for category in categories %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">{{ category.name }}</h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                {% for item in category.items %}
+                <div class="list-group-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">{{ item.name }}</h5>
+                            <p class="mb-1 text-muted small">{{ item.description|default:" " }}</p>
+                            {% if item.is_available %}
+                                <span class="badge bg-success">В наличии</span>
+                            {% else %}
+                                <span class="badge bg-danger">Нет в наличии</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="h5 text-success">{{ item.price }} ₽</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center text-muted">
+                    В этой категории пока нет блюд
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info text-center">
+        Меню пока пусто. Добавьте блюда в админке.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

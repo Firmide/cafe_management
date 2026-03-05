@@ -1,96 +1,251 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Все заказы</title>
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background-color: #f4f4f4; }
-        form { display: inline; margin-right: 10px; }
-        .revenue-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            text-decoration: none;
-            background: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-        }
-        .item-list {
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
+{% extends "orders/base.html" %}
+{% load static %}
 
-<h1>Все заказы</h1>
+{% block title %}Список заказов{% endblock %}
 
-<a href="{% url 'revenue_report' %}" class="revenue-btn">Посмотреть выручку</a>
+{% block extra_css %}
+<style>
+    .order-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    .order-header {
+        padding: 15px 20px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .status-badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .table-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .order-body {
+        padding: 20px;
+        background: white;
+    }
+    .order-items {
+        list-style: none;
+        padding: 0;
+        margin: 15px 0;
+    }
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #eee;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    .item-name {
+        font-weight: 500;
+    }
+    .item-quantity {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .item-price {
+        font-weight: 600;
+        color: #28a745;
+    }
+    .total-price {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #28a745;
+        text-align: right;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #eee;
+    }
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .btn-action {
+        padding: 8px 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        font-size: 0.9rem;
+        transition: opacity 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-action:hover {
+        opacity: 0.8;
+        color: white;
+    }
+    .btn-detail { background-color: #17a2b8; }
+    .btn-edit { background-color: #ffc107; color: #212529; }
+    .btn-delete { background-color: #dc3545; }
+    .btn-add { background-color: #28a745; }
+    
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .table-busy {
+        background-color: #ffc107;
+        color: #212529;
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-left: 10px;
+    }
+    .empty-items {
+        color: #6c757d;
+        font-style: italic;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
 
-<form method="GET">
-    <input type="text" name="q" placeholder="Поиск по столу или статусу" value="{{ query }}">
-    <button type="submit">Найти</button>
-</form>
+{% block content %}
+<div class="container">
+    <!-- Заголовок и кнопка создания -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold">📋 Все заказы</h1>
+        <a href="{% url 'order_create' %}" class="btn btn-success btn-lg">
+            ➕ Создать заказ
+        </a>
+    </div>
 
-<form method="GET">
-    <select name="status" onchange="this.form.submit()">
-        <option value="">Все заказы</option>
-        <option value="в ожидании" {% if status_filter == "в ожидании" %}selected{% endif %}>В ожидании</option>
-        <option value="готово" {% if status_filter == "готово" %}selected{% endif %}>Готово</option>
-        <option value="оплачено" {% if status_filter == "оплачено" %}selected{% endif %}>Оплачено</option>
-    </select>
-    <noscript><button type="submit">Фильтровать</button></noscript> 
-</form>
-
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Стол</th>
-        <th>Блюда</th>
-        <th>Стоимость</th>
-        <th>Статус</th>
-        <th>Действия</th>
-    </tr>
-    {% for order in orders %}
-    <tr>
-        <td>{{ order.id }}</td>
-        <td>{{ order.table_number }}</td>
-        <td class="item-list">
-            {% if order.items_parsed %}
-                {% for item in order.items_parsed %}
-                    {{ item.name }} — {{ item.price }}<br>
-                {% endfor %}
-            {% else %}
-                Нет данных
-            {% endif %}
-        </td>
-        <td>{{ order.total_price }}</td>
-        <td>
-            <form method="POST" action="{% url 'update_status' order.id %}">
-                {% csrf_token %}
-                <select name="status">
-                    <option value="в ожидании" {% if order.status == "в ожидании" %}selected{% endif %}>В ожидании</option>
-                    <option value="готово" {% if order.status == "готово" %}selected{% endif %}>Готово</option>
-                    <option value="оплачено" {% if order.status == "оплачено" %}selected{% endif %}>Оплачено</option>
+    <!-- Фильтры -->
+    <div class="filter-section">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Поиск</label>
+                <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Номер стола, блюдо...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select name="status" class="form-select">
+                    <option value="">Все статусы</option>
+                    {% for status_code, status_name in status_choices %}
+                    <option value="{{ status_code }}" {% if status_filter == status_code %}selected{% endif %}>
+                        {{ status_name }}
+                    </option>
+                    {% endfor %}
                 </select>
-                <button type="submit">Обновить</button>
-            </form>
-        </td>
-        <td>
-            <a href="{% url 'order_detail' order.id %}">Подробнее</a> | 
-            <a href="{% url 'order_edit' order.id %}">Редактировать</a> | 
-            <a href="{% url 'order_delete' order.id %}">Удалить</a>
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan="6">Заказы не найдены</td>
-    </tr>
-    {% endfor %}
-</table>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Сортировка</label>
+                <select name="sort" class="form-select">
+                    <option value="-created_at">Сначала новые</option>
+                    <option value="created_at">Сначала старые</option>
+                    <option value="-total_price">По сумме (дорогие)</option>
+                    <option value="total_price">По сумме (дешевые)</option>
+                    <option value="table_number">По номеру стола</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">🔍 Применить</button>
+            </div>
+        </form>
+    </div>
 
-<a href="{% url 'order_create' %}">Создать заказ</a>
-
-</body>
-</html>
+    <!-- Список заказов -->
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-md-6 col-lg-4">
+            <div class="order-card">
+                <!-- Шапка с номером стола и статусом -->
+                <div class="order-header" style="background-color: 
+                    {% if order.status == 'в ожидании' %}#ffc107
+                    {% elif order.status == 'готово' %}#17a2b8
+                    {% elif order.status == 'оплачено' %}#28a745
+                    {% endif %};">
+                    <span class="table-number">🍽️ Стол {{ order.table_number }}</span>
+                    <span class="status-badge" style="background-color: rgba(255,255,255,0.2);">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+                
+                <!-- Тело заказа -->
+                <div class="order-body">
+                    <!-- Состав заказа -->
+                    <h6 class="mb-3">🍲 Состав заказа:</h6>
+                    {% if order.display_items %}
+                    <ul class="order-items">
+                        {% for item in order.display_items %}
+                        <li class="order-item">
+                            <span>
+                                <span class="item-name">{{ item.name }}</span>
+                                {% if item.quantity > 1 %}
+                                    <span class="item-quantity"> x{{ item.quantity }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="item-price">{{ item.price }} ₽</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% elif order.order_items.exists %}
+                        {% for oi in order.order_items.all %}
+                        <li class="order-item">
+                            <span>
+                                <span class="item-name">{{ oi.item.name }}</span>
+                                {% if oi.quantity > 1 %}
+                                    <span class="item-quantity"> x{{ oi.quantity }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="item-price">{{ oi.item.price }} ₽</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                        <div class="empty-items">Нет блюд</div>
+                    {% endif %}
+                    
+                    <!-- Общая сумма -->
+                    <div class="total-price">
+                        Итого: {{ order.total_price }} ₽
+                    </div>
+                    
+                    <!-- Действия -->
+                    <div class="order-actions">
+                        <a href="{% url 'order_detail' order.id %}" class="btn-action btn-detail">👁️ Подробнее</a>
+                        <a href="{% url 'order_edit' order.id %}" class="btn-action btn-edit">✏️ Редактировать</a>
+                        <a href="{% url 'order_delete' order.id %}" class="btn-action btn-delete" 
+                           onclick="return confirm('Удалить заказ?')">🗑️ Удалить</a>
+                    </div>
+                    
+                    <!-- Если стол занят (пометка) -->
+                    {% if order.status != 'оплачено' and order.status != 'готово' %}
+                    <div class="mt-2">
+                        <span class="table-busy">⚠️ Стол занят</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <h3>😕 Заказов пока нет</h3>
+                <p class="mb-4">Создайте первый заказ, нажав на кнопку выше</p>
+                <a href="{% url 'order_create' %}" class="btn btn-success btn-lg">➕ Создать заказ</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

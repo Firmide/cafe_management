@@ -25,20 +25,21 @@ SECRET_KEY = "django-insecure-vo0w$rlp1_yw!a)+^%q)z)g^xq1c!2fpz*ttd%vitii90qhs*h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.20.20.10', 'localhost', '127.0.0.1']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "orders",  # Добавляем приложение 'orders'
-    "rest_framework",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'django_filters',  # Добавь эту строку
+    'orders',
 ]
 
 MIDDLEWARE = [

@@ -1,41 +1,581 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Создать/Редактировать заказ</title>
-    <style>
-        .error { color: red; }
-    </style>
-</head>
-<body>
+{% extends "orders/base.html" %}
+{% load static %}
 
-<h1>{% if order %}Редактировать{% else %}Создать{% endif %} заказ</h1>
+{% block title %}
+    {% if order %}Редактирование заказа #{{ order.id }}{% else %}Новый заказ{% endif %}
+{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block extra_css %}
+<style>
+    .order-item-row {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        position: relative;
+        transition: all 0.3s;
+    }
+    .order-item-row:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .delete-row {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 1.2rem;
+        z-index: 10;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s;
+    }
+    .delete-row:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    .delete-row input {
+        display: none;
+    }
+    .delete-row label {
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .item-select, .quantity-input {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: all 0.3s;
+    }
+    .item-select:focus, .quantity-input:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    .item-price {
+        font-size: 0.9rem;
+        color: #28a745;
+        font-weight: 600;
+    }
+    .item-category {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .total-price {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    .add-item-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+    .add-item-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        justify-content: center;
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 12px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+    .btn-cancel {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        color: white;
+        padding: 12px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        color: white;
+    }
+    .empty-items-message {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        display: none;
+    }
+    .legacy-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .busy-tables-alert {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .table-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 2px;
+    }
+    .table-badge.busy {
+        background-color: #dc3545;
+        color: white;
+    }
+</style>
+{% endblock %}
 
-    <label for="id_table_number">Номер стола:</label>
-    {{ form.table_number }}
-    {% if form.table_number.errors %}
-        <p class="error">{{ form.table_number.errors.0 }}</p>
-    {% endif %}
-    <br><br>
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <h1 class="mb-4 text-center">
+                {% if order %}
+                    ✏️ Редактирование заказа #{{ order.id }}
+                {% else %}
+                    ➕ Новый заказ
+                {% endif %}
+            </h1>
 
-    <label for="id_items">Блюда (формат: "Хлеб - 100, Борщ - 500"):</label>
-    {{ form.items }}
-    {% if form.items.errors %}
-        <p class="error">{{ form.items.errors.0 }}</p>
-    {% endif %}
-    <br><br>
+            {% if busy_tables %}
+            <div class="busy-tables-alert">
+                <strong>⚠️ Занятые столы:</strong>
+                <div class="mt-2">
+                    {% for table in busy_tables %}
+                        <span class="table-badge busy">Стол {{ table }}</span>
+                    {% endfor %}
+                </div>
+                <small class="d-block mt-2">Эти столы уже имеют активные заказы</small>
+            </div>
+            {% endif %}
 
-    <label for="id_status">Статус:</label>
-    {{ form.status }}
-    <br><br>
+            {% if order and order.items and not order.order_items.exists %}
+            <!-- Предупреждение для старых заказов -->
+            <div class="legacy-warning">
+                <strong>⚠️ Внимание!</strong> Это старый заказ, созданный в текстовом формате. 
+                Вы можете редактировать его в старом формате или создать новый заказ через меню.
+                <div class="mt-2">
+                    <a href="?legacy=1" class="btn btn-warning btn-sm">Редактировать в старом формате</a>
+                </div>
+            </div>
+            {% endif %}
 
-    <button type="submit">Сохранить</button>
-</form>
+            <form method="POST" id="orderForm">
+                {% csrf_token %}
+                
+                <!-- Скрытое поле для передачи занятых столов -->
+                <input type="hidden" name="busy_tables" value="{{ busy_tables|join:',' }}" id="id_busy_tables">
+                
+                <!-- Основная информация о заказе -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">📋 Информация о заказе</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.table_number.id_for_label }}" class="form-label">Номер стола *</label>
+                                {{ form.table_number }}
+                                {% if form.table_number.errors %}
+                                    <div class="text-danger mt-1">{{ form.table_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Статус</label>
+                                {{ form.status }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<a href="{% url 'order_list' %}">Назад</a>
+                <!-- Блок для выбора блюд -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">🍽️ Блюда в заказе</h5>
+                        <button type="button" class="add-item-btn" id="addItemBtn">
+                            ➕ Добавить блюдо
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Контейнер для динамических форм -->
+                        <div id="items-container">
+                            {{ formset.management_form }}
+                            {% for item_form in formset %}
+                                <div class="order-item-row" id="item-row-{{ forloop.counter0 }}">
+                                    {% if item_form.instance.pk %}{{ item_form.id }}{% endif %}
+                                    
+                                    <!-- Кнопка удаления -->
+                                    <div class="delete-row">
+                                        {{ item_form.DELETE }}
+                                        <label for="{{ item_form.DELETE.id_for_label }}" title="Удалить">🗑️</label>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-7 mb-3">
+                                            <label class="form-label">Блюдо</label>
+                                            {{ item_form.item }}
+                                            {% if item_form.item.errors %}
+                                                <div class="text-danger">{{ item_form.item.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="item-price mt-1" id="price-{{ forloop.counter0 }}"></div>
+                                            <div class="item-category" id="category-{{ forloop.counter0 }}"></div>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Количество</label>
+                                            {{ item_form.quantity }}
+                                            {% if item_form.quantity.errors %}
+                                                <div class="text-danger">{{ item_form.quantity.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-2 mb-3">
+                                            <label class="form-label">Сумма</label>
+                                            <div class="pt-2">
+                                                <span class="fw-bold text-success" id="item-total-{{ forloop.counter0 }}">0 ₽</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
 
-</body>
-</html>
+                        <!-- Шаблон для новой пустой формы (скрыт) -->
+                        <div id="empty-form-template" style="display: none;">
+                            <div class="order-item-row" id="item-row-__prefix__">
+                                <div class="delete-row">
+                                    <input type="checkbox" name="order_items-__prefix__-DELETE" id="id_order_items-__prefix__-DELETE">
+                                    <label for="id_order_items-__prefix__-DELETE" title="Удалить">🗑️</label>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-7 mb-3">
+                                        <label class="form-label">Блюдо</label>
+                                        <select name="order_items-__prefix__-item" class="form-control item-select" id="id_order_items-__prefix__-item">
+                                            <option value="">---------</option>
+                                            {% for item in items %}
+                                                <option value="{{ item.id }}" data-price="{{ item.price }}" data-category="{{ item.get_category_display }}">{{ item.name }} - {{ item.price }} ₽</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="item-price mt-1" id="price-__prefix__"></div>
+                                        <div class="item-category" id="category-__prefix__"></div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Количество</label>
+                                        <input type="number" name="order_items-__prefix__-quantity" value="1" min="1" class="form-control quantity-input" id="id_order_items-__prefix__-quantity">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Сумма</label>
+                                        <div class="pt-2">
+                                            <span class="fw-bold text-success" id="item-total-__prefix__">0 ₽</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Общая сумма -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-end">
+                                <h4>Общая сумма: <span class="total-price" id="grand-total">0 ₽</span></h4>
+                            </div>
+                        </div>
+
+                        <!-- Сообщение об ошибке, если нет ни одного блюда -->
+                        <div id="empty-items-error" class="empty-items-message">
+                            ⚠️ Добавьте хотя бы одно блюдо в заказ
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-save" id="submitBtn">
+                        {% if order %}💾 Сохранить изменения{% else %}✅ Создать заказ{% endif %}
+                    </button>
+                    <a href="{% url 'order_list' %}" class="btn-cancel">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Данные о блюдах из меню
+        const menuItems = {
+            {% for item in items %}
+                {{ item.id }}: {
+                    name: "{{ item.name|escapejs }}",
+                    price: {{ item.price }},
+                    category: "{{ item.get_category_display|escapejs }}"
+                },
+            {% endfor %}
+        };
+
+        // Функция для обновления информации о блюде
+        function updateItemInfo(rowId) {
+            const select = document.getElementById(`id_order_items-${rowId}-item`);
+            const priceSpan = document.getElementById(`price-${rowId}`);
+            const categorySpan = document.getElementById(`category-${rowId}`);
+            const quantityInput = document.getElementById(`id_order_items-${rowId}-quantity`);
+            const totalSpan = document.getElementById(`item-total-${rowId}`);
+            
+            if (!select) return;
+            
+            if (!select.value) {
+                if (priceSpan) priceSpan.textContent = '';
+                if (categorySpan) categorySpan.textContent = '';
+                if (totalSpan) totalSpan.textContent = '0 ₽';
+                calculateGrandTotal();
+                return;
+            }
+            
+            const itemId = select.value;
+            const item = menuItems[itemId];
+            
+            if (item) {
+                if (priceSpan) priceSpan.textContent = `💰 ${item.price} ₽`;
+                if (categorySpan) categorySpan.textContent = `📋 ${item.category}`;
+                
+                // Обновляем сумму позиции
+                if (quantityInput && totalSpan) {
+                    const quantity = parseInt(quantityInput.value) || 1;
+                    const total = item.price * quantity;
+                    totalSpan.textContent = `${total} ₽`;
+                }
+            }
+            
+            calculateGrandTotal();
+        }
+
+        // Функция для расчета общей суммы
+        function calculateGrandTotal() {
+            let grandTotal = 0;
+            const rows = document.querySelectorAll('.order-item-row');
+            
+            rows.forEach((row, index) => {
+                // Пропускаем скрытые строки (удаленные)
+                if (row.style.display === 'none') return;
+                
+                const select = document.getElementById(`id_order_items-${index}-item`);
+                const quantityInput = document.getElementById(`id_order_items-${index}-quantity`);
+                
+                if (select && select.value && quantityInput) {
+                    const itemId = select.value;
+                    const item = menuItems[itemId];
+                    if (item) {
+                        const quantity = parseInt(quantityInput.value) || 1;
+                        grandTotal += item.price * quantity;
+                    }
+                }
+            });
+            
+            const grandTotalSpan = document.getElementById('grand-total');
+            if (grandTotalSpan) {
+                grandTotalSpan.textContent = grandTotal + ' ₽';
+            }
+        }
+
+        // Функция для добавления новой строки с блюдом
+        function addNewItemRow() {
+            const container = document.getElementById('items-container');
+            const template = document.getElementById('empty-form-template').innerHTML;
+            const totalForms = document.getElementById('id_order_items-TOTAL_FORMS');
+            
+            if (!container || !template || !totalForms) {
+                console.error('Required elements not found');
+                return;
+            }
+            
+            const currentCount = parseInt(totalForms.value);
+            
+            // Заменяем __prefix__ на текущий индекс
+            let newRowHtml = template.replace(/__prefix__/g, currentCount);
+            
+            // Создаем временный div и вставляем новую строку
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newRowHtml;
+            const newRow = tempDiv.firstElementChild;
+            
+            // Добавляем новую строку в контейнер
+            container.appendChild(newRow);
+            
+            // Увеличиваем счетчик форм
+            totalForms.value = currentCount + 1;
+            
+            // Прикрепляем обработчики к новой строке
+            attachHandlersToRow(currentCount);
+            
+            // Обновляем кнопки удаления
+            updateDeleteButtons();
+        }
+
+        // Функция для обновления видимости кнопок удаления
+        function updateDeleteButtons() {
+            const rows = document.querySelectorAll('.order-item-row');
+            const totalForms = document.getElementById('id_order_items-TOTAL_FORMS');
+            
+            if (!totalForms) return;
+            
+            const formCount = parseInt(totalForms.value);
+            
+            rows.forEach((row, index) => {
+                const deleteDiv = row.querySelector('.delete-row');
+                if (deleteDiv) {
+                    // Показываем кнопку удаления, если это не единственная строка
+                    if (formCount > 1) {
+                        deleteDiv.style.display = 'flex';
+                    } else {
+                        deleteDiv.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Функция для прикрепления обработчиков к строке
+        function attachHandlersToRow(rowId) {
+            const select = document.getElementById(`id_order_items-${rowId}-item`);
+            const quantity = document.getElementById(`id_order_items-${rowId}-quantity`);
+            
+            if (select) {
+                select.addEventListener('change', () => updateItemInfo(rowId));
+                // Запускаем обновление сразу, если есть выбранное значение
+                if (select.value) {
+                    updateItemInfo(rowId);
+                }
+            }
+            if (quantity) {
+                quantity.addEventListener('input', () => updateItemInfo(rowId));
+            }
+        }
+
+        // Обработка удаления строк
+        function handleDeleteClick(e) {
+            const target = e.target.closest('.delete-row');
+            if (!target) return;
+            
+            const row = target.closest('.order-item-row');
+            if (!row) return;
+            
+            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (!deleteCheckbox) return;
+            
+            // Помечаем на удаление
+            deleteCheckbox.checked = true;
+            
+            // Скрываем строку
+            row.style.display = 'none';
+            
+            // Обновляем общую сумму
+            calculateGrandTotal();
+            
+            // Обновляем кнопки удаления
+            updateDeleteButtons();
+            
+            e.preventDefault();
+        }
+
+        // Валидация формы перед отправкой
+        function validateForm(e) {
+            let hasItems = false;
+            const rows = document.querySelectorAll('.order-item-row');
+            const errorDiv = document.getElementById('empty-items-error');
+            
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const select = row.querySelector('select[name$="-item"]');
+                    if (select && select.value) {
+                        hasItems = true;
+                    }
+                }
+            });
+            
+            if (!hasItems) {
+                e.preventDefault();
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Инициализация
+        function init() {
+            // Прикрепляем обработчики к существующим строкам
+            const rows = document.querySelectorAll('.order-item-row');
+            rows.forEach((row, index) => {
+                attachHandlersToRow(index);
+            });
+            
+            // Обновляем кнопки удаления
+            updateDeleteButtons();
+            
+            // Рассчитываем начальную общую сумму
+            calculateGrandTotal();
+            
+            // Кнопка добавления нового блюда
+            const addBtn = document.getElementById('addItemBtn');
+            if (addBtn) {
+                addBtn.addEventListener('click', addNewItemRow);
+            }
+            
+            // Обработка удаления строк (делегирование событий)
+            document.addEventListener('click', handleDeleteClick);
+            
+            // Валидация формы
+            const form = document.getElementById('orderForm');
+            if (form) {
+                form.addEventListener('submit', validateForm);
+            }
+        }
+
+        // Запускаем инициализацию
+        init();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,451 @@
+{% extends "orders/base.html" %}
+{% load static %}
+
+{% block title %}Дашборд | Статистика{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+<style>
+    .stat-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .stat-icon {
+        font-size: 3rem;
+        opacity: 0.2;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        line-height: 1.2;
+    }
+    .stat-label {
+        color: rgba(255,255,255,0.8);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #0097b2 100%);
+    }
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    }
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    .table-popular td, .table-popular th {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+    .badge-status {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold">📊 Дашборд</h1>
+            <p class="text-muted">Статистика работы кафе. Обновлено {% now "d.m.Y H:i" %}</p>
+        </div>
+    </div>
+
+    <!-- Карточки с основной статистикой за сегодня -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-value">{{ today_stats.total }}</div>
+                    <div class="stat-label">Заказов сегодня</div>
+                    <small class="text-white-50">из них:</small>
+                    <div class="mt-2 d-flex justify-content-between">
+                        <span>⏳ {{ today_stats.pending }}</span>
+                        <span>✅ {{ today_stats.ready }}</span>
+                        <span>💰 {{ today_stats.paid }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value">{{ today_stats.revenue|floatformat:0 }} ₽</div>
+                    <div class="stat-label">Выручка сегодня</div>
+                    <small class="text-white-50">за оплаченные заказы</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-value">{{ week_orders_count }}</div>
+                    <div class="stat-label">Заказов за неделю</div>
+                    <small class="text-white-50">выручка: {{ week_revenue|floatformat:0 }} ₽</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-warning text-white">
+                <div class="card-body">
+                    <div class="stat-icon">🧾</div>
+                    <div class="stat-value">{{ avg_check }} ₽</div>
+                    <div class="stat-label">Средний чек</div>
+                    <small class="text-white-50">по оплаченным заказам</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Второй ряд карточек: общая статистика -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-secondary text-white">
+                <div class="card-body">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value">{{ total_orders }}</div>
+                    <div class="stat-label">Всего заказов</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-danger text-white">
+                <div class="card-body">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value">{{ total_revenue|floatformat:0 }} ₽</div>
+                    <div class="stat-label">Общая выручка</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="stat-icon">🍽️</div>
+                    <div class="stat-value">{{ popular_items|length }}</div>
+                    <div class="stat-label">Популярных блюд</div>
+                    <small class="text-white-50">в топе за неделю</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-value">{{ month_revenue|floatformat:0 }} ₽</div>
+                    <div class="stat-label">Выручка за месяц</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статусы заказов и популярные блюда -->
+    <div class="row mb-4">
+        <!-- Круговая диаграмма статусов -->
+        <div class="col-xl-4 col-lg-5 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">📊 Статусы заказов</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="mt-4">
+                        {% for status, count in status_stats.items %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>
+                                {% if status == 'В ожидании' %}⏳
+                                {% elif status == 'Готово' %}✅
+                                {% elif status == 'Оплачено' %}💵
+                                {% endif %}
+                                {{ status }}
+                            </span>
+                            <span class="fw-bold">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Популярные блюда за неделю -->
+        <div class="col-xl-8 col-lg-7 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">🔥 Популярные блюда за неделю</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-popular mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Блюдо</th>
+                                    <th>Категория</th>
+                                    <th class="text-center">Продано (шт.)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in popular_items %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <strong>{{ item.name }}</strong>
+                                        {% if not item.is_available %}
+                                            <span class="badge bg-warning text-dark ms-2">нет в наличии</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.get_category_display }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success rounded-pill px-3 py-2">{{ item.total_ordered }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Нет данных за неделю
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-muted small">
+                    * По оплаченным заказам за последние 7 дней
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- График заказов по дням -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">📈 Динамика заказов за 7 дней</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="ordersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительные метрики -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">📋 Последние заказы</h6>
+                    <div class="list-group list-group-flush">
+                        {% for order in orders|slice:":5" %}
+                        <a href="{% url 'order_detail' order.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Стол {{ order.table_number }}</strong>
+                                <br>
+                                <small class="text-muted">{{ order.created_at|date:"d.m H:i" }}</small>
+                            </div>
+                            <div>
+                                <span class="badge 
+                                    {% if order.status == 'в ожидании' %}bg-warning text-dark
+                                    {% elif order.status == 'готово' %}bg-info
+                                    {% elif order.status == 'оплачено' %}bg-success
+                                    {% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                                <span class="ms-2 fw-bold">{{ order.total_price }} ₽</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-muted">Нет заказов</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">⏱️ Средние показатели</h6>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted">Заказов в день (сред.)</div>
+                                <div class="h4 mt-2">{{ avg_orders_per_day|default:"0" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted">Выручка в день (сред.)</div>
+                                <div class="h4 mt-2">{{ avg_revenue_per_day|floatformat:0 }} ₽</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted">Самый популярный стол</div>
+                                <div class="h4 mt-2">{{ popular_table|default:"—" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted">Всего блюд в меню</div>
+                                <div class="h4 mt-2">{{ total_items }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    // Круговая диаграмма статусов
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for status in status_stats %}'{{ status }}',{% endfor %}],
+            datasets: [{
+                data: [{% for count in status_stats.values %}{{ count }},{% endfor %}],
+                backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
+                borderWidth: 0,
+                hoverOffset: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.raw || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // График заказов по дням
+    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+    new Chart(ordersCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for day in last_7_days %}'{{ day.date }}',{% endfor %}],
+            datasets: [
+                {
+                    label: 'Количество заказов',
+                    data: [{% for day in last_7_days %}{{ day.orders }},{% endfor %}],
+                    borderColor: '#17a2b8',
+                    backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                    tension: 0.4,
+                    yAxisID: 'y',
+                    fill: true
+                },
+                {
+                    label: 'Выручка (₽)',
+                    data: [{% for day in last_7_days %}{{ day.revenue }},{% endfor %}],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    yAxisID: 'y1',
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            stacked: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Количество заказов'
+                    },
+                    beginAtZero: true
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Выручка (₽)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
