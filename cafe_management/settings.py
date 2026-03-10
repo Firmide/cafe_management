@@ -38,10 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_filters',
-    'orders',           # Общая логика и модели
-    'staff',            # Приложение для сотрудников
-    'customer',         # Приложение для клиентов
+    'django_filters',  # Должно быть здесь
+    'orders',
+    'staff',
+    'customer',
 ]
 
 MIDDLEWARE = [
@@ -110,7 +110,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'Europe/Moscow'
+USE_TZ = True
 
 USE_I18N = True
 

@@ -3,6 +3,7 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib import messages
+from django.core.paginator import Paginator  # Добавь эту строку
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -145,29 +146,52 @@ def dashboard(request):
 
 @login_required(login_url='staff:login')
 def order_list(request):
-    """Список заказов для сотрудников"""
+    """Список заказов с поиском и фильтрацией"""
     query = request.GET.get('q', '')
     status_filter = request.GET.get('status', '')
     
-    orders = Order.objects.all()
+    # Получаем все заказы
+    all_orders = Order.objects.all()
     
+    # Применяем поиск
     if query:
         if query.isdigit():
-            orders = orders.filter(table_number=int(query))
+            all_orders = all_orders.filter(table_number=int(query))
         else:
-            orders = orders.filter(
+            all_orders = all_orders.filter(
                 Q(status__icontains=query) |
                 Q(order_items__item__name__icontains=query)
             ).distinct()
     
+    # Применяем фильтр по статусу, если он есть
     if status_filter:
-        orders = orders.filter(status=status_filter)
+        filtered_orders = all_orders.filter(status=status_filter)
+    else:
+        filtered_orders = all_orders
     
-    for order in orders:
+    # Сортируем
+    filtered_orders = filtered_orders.order_by('-created_at')
+    
+    # Получаем отдельно оплаченные заказы (все, без фильтрации)
+    paid_orders = all_orders.filter(status='оплачено').order_by('-created_at')
+    
+    # Добавляем отформатированные данные для отображения
+    for order in filtered_orders:
         order.display_items = order.get_items_display()
     
+    for order in paid_orders:
+        order.display_items = order.get_items_display()
+    
+    # Пагинация для отфильтрованных заказов
+    paginator = Paginator(filtered_orders, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'orders': orders,
+        'orders': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'paid_orders': paid_orders,  # Отдельный список оплаченных заказов
         'query': query,
         'status_filter': status_filter,
         'status_choices': Order.STATUS_CHOICES,

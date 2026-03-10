@@ -1,0 +1,50 @@
+<div class="order-card">
+    <div class="order-header {% if order.status == 'в ожидании' %}pending{% elif order.status == 'готово' %}ready{% elif order.status == 'оплачено' %}paid{% endif %}">
+        <span class="table-badge">🍽️ Стол {{ order.table_number }}</span>
+        <span class="status-badge">{{ order.get_status_display }}</span>
+    </div>
+    
+    <div class="order-body">
+        <!-- Время заказа -->
+        <div class="order-time">
+            <span>🕒 {{ order.created_at|date:"H:i" }}</span>
+            <span>📅 {{ order.created_at|date:"d.m.Y" }}</span>
+        </div>
+        
+        <!-- Список блюд -->
+        <ul class="items-list">
+            {% for item in order.display_items|slice:":3" %}
+            <li>
+                <span>
+                    <span class="item-name">{{ item.name|truncatechars:25 }}</span>
+                    {% if item.quantity > 1 %}
+                        <span class="item-quantity">×{{ item.quantity }}</span>
+                    {% endif %}
+                </span>
+                <span class="item-price">{{ item.price }} ₽</span>
+            </li>
+            {% endfor %}
+            {% if order.display_items|length > 3 %}
+            <li class="more-items">
+                + еще {{ order.display_items|length|add:"-3" }} блюд(а)
+            </li>
+            {% endif %}
+        </ul>
+        
+        <!-- Общая сумма -->
+        <div class="total-section">
+            <span class="total-label">Итого:</span>
+            <span class="total-amount">{{ order.total_price }} ₽</span>
+        </div>
+        
+        <!-- Действия -->
+        <div class="order-actions">
+            <a href="{% url 'staff:order_detail' order.id %}" class="action-btn view">👁️ Подробнее</a>
+            {% if order.status != 'оплачено' %}
+            <a href="{% url 'staff:order_edit' order.id %}" class="action-btn edit">✏️ Редактировать</a>
+            {% endif %}
+            <a href="{% url 'staff:order_delete' order.id %}" class="action-btn delete" 
+               onclick="return confirm('Удалить заказ #{{ order.id }}?')">🗑️ Удалить</a>
+        </div>
+    </div>
+</div>
