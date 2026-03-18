@@ -22,6 +22,14 @@ class Item(models.Model):
     is_available = models.BooleanField(default=True, verbose_name="Доступно")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата добавления")
     
+    # Новое поле для фотографий
+    image = models.ImageField(
+        upload_to='menu_items/', 
+        verbose_name="Фото блюда", 
+        blank=True, 
+        null=True
+    )
+    
     class Meta:
         verbose_name = "Блюдо"
         verbose_name_plural = "Меню"

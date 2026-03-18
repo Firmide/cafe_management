@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html  # Добавь этот импорт
 from .models import Order, Item, OrderItem, OrderHistory
 
 class OrderHistoryInline(admin.TabularInline):
@@ -18,18 +19,25 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'is_available')
+    list_display = ('name', 'category', 'price', 'is_available', 'image_preview')  # Добавили image_preview
     list_filter = ('category', 'is_available')
     search_fields = ('name', 'description')
     list_editable = ('price', 'is_available')
     fieldsets = (
         ('Основная информация', {
-            'fields': ('name', 'description', 'price')
+            'fields': ('name', 'description', 'price', 'image')  # Добавили поле image
         }),
         ('Категория и доступность', {
             'fields': ('category', 'is_available')
         }),
     )
+    
+    def image_preview(self, obj):
+        """Превью картинки в админке"""
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 50px; width: auto; border-radius: 4px;" />', obj.image.url)
+        return "—"
+    image_preview.short_description = "Фото"
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
@@ -62,7 +70,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ('table_number', 'order_items__item__name')
     readonly_fields = ('created_at', 'updated_at', 'paid_at', 'display_total')
     inlines = [OrderItemInline, OrderHistoryInline]
-    list_editable = ('status',)  # Можно менять статус прямо из списка
+    list_editable = ('status',)
     list_per_page = 20
     
     fieldsets = (
@@ -86,14 +94,13 @@ class OrderAdmin(admin.ModelAdmin):
         """Отображение общей суммы"""
         return f"{obj.total_price} ₽"
     display_total.short_description = 'Общая сумма'
-    display_total.admin_order_field = 'total_price'  # Сортировка по полю
+    display_total.admin_order_field = 'total_price'
     
     def save_model(self, request, obj, form, change):
         """Передаем информацию о том, кто изменил заказ"""
-        if change:  # Если изменяем существующий заказ
+        if change:
             old = Order.objects.get(pk=obj.pk)
-            if old.status != obj.status:  # Если статус изменился
-                # Создаем запись в истории с информацией о пользователе
+            if old.status != obj.status:
                 OrderHistory.objects.create(
                     order=obj,
                     status=obj.status,
