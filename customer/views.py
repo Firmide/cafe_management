@@ -109,6 +109,10 @@ def my_orders(request):
     """Просмотр истории заказов - теперь через localStorage"""
     return render(request, 'customer/my_orders.html')
 
+def cart_page(request):
+    """Страница корзины"""
+    return render(request, 'customer/cart_page.html')
+
 
 def get_order_details(request, order_id):
     """API для получения деталей заказа (для AJAX)"""

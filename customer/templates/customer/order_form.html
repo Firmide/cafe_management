@@ -2,6 +2,71 @@
 
 {% block title %}Оформление заказа{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ========== МОБИЛЬНЫЕ СТИЛИ ========== */
+    @media (max-width: 768px) {
+        .card {
+            border-radius: 0 !important;
+            margin: -1rem -1rem 0 -1rem;
+            box-shadow: none !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+        
+        .card-header {
+            border-radius: 0 !important;
+            padding: 1rem !important;
+        }
+        
+        .btn-success {
+            padding: 16px !important;
+            font-size: 1.2rem !important;
+            border-radius: 50px !important;
+        }
+        
+        input.form-control {
+            padding: 14px !important;
+            font-size: 16px !important; /* чтобы не зумилось на iOS */
+            border-radius: 30px !important;
+        }
+        
+        .container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        h4 {
+            font-size: 1.3rem !important;
+        }
+        
+        .alert {
+            border-radius: 0 !important;
+            margin: 0 0 1rem 0 !important;
+        }
+        
+        #cart-summary {
+            padding: 0 1rem;
+        }
+        
+        .fw-bold {
+            font-size: 1.1rem;
+        }
+    }
+    
+    /* Общие стили */
+    .badge.bg-danger {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.8rem;
+    }
+    
+    #cart-items-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -107,10 +172,8 @@
     // Сохраняем данные корзины в скрытое поле
     cartData.value = JSON.stringify(cart);
     
-    // Очищаем корзину при отправке формы (более надежный способ)
+    // Очищаем корзину при отправке формы
     document.getElementById('orderForm').addEventListener('submit', function(e) {
-        // Сохраняем данные корзины в скрытое поле (уже сделано выше)
-        
         // Устанавливаем флаг в sessionStorage, что заказ оформлен
         sessionStorage.setItem('order_placed', 'true');
         

@@ -192,6 +192,48 @@
     .category-десерты { background-color: #e83e8c; }
     .category-завтраки { background-color: #e67e22; }
     .category-прочее { background-color: #6c757d; }
+    
+    /* ========== МОБИЛЬНЫЕ СТИЛИ ========== */
+    @media (max-width: 768px) {
+        .card {
+            border-radius: 0 !important;
+            margin: -1rem -1rem 0 -1rem;
+        }
+        
+        .btn-save, .btn-cancel {
+            padding: 16px !important;
+            font-size: 1.2rem !important;
+            width: 100%;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        input.form-control, select.form-control {
+            padding: 14px !important;
+            font-size: 16px !important;
+        }
+        
+        .add-item-btn {
+            padding: 10px 15px !important;
+            font-size: 0.9rem !important;
+        }
+        
+        .order-item-row {
+            padding: 10px;
+        }
+        
+        .delete-row {
+            top: 5px;
+            right: 5px;
+        }
+        
+        h1 {
+            font-size: 1.8rem !important;
+        }
+    }
 </style>
 {% endblock %}
 
