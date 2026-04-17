@@ -210,18 +210,35 @@
         .btn-action {
             text-align: center;
         }
+        
+        .header-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 15px !important;
+        }
+        
+        .back-button {
+            margin-bottom: 0 !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
+    <!-- Кнопка "Назад" вверху страницы -->
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'staff:order_list' %}" class="btn btn-outline-secondary me-3" style="border-radius: 30px;">
+            ← Назад
+        </a>
+        <h1 class="mb-0">🍽️ Заказ #{{ order.id }}</h1>
+    </div>
+
     <div class="order-detail-card">
         <!-- Шапка заказа -->
         <div class="order-header">
-            <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="d-flex justify-content-between align-items-start flex-wrap header-row">
                 <div>
-                    <h1>🍽️ Заказ #{{ order.id }}</h1>
                     <div class="table-badge">
                         <span class="me-2">📍</span> Стол {{ order.table_number }}
                     </div>
@@ -262,8 +279,8 @@
                                 {% endif %}
                             </td>
                             <td>{{ item.quantity }} шт.</td>
-                            <td>{{ item.item.price }} ₽</td>
-                            <td class="item-price">{{ item.total_price }} ₽</td>
+                            <td>{{ item.item.price }} ₽</span></td>
+                            <td class="item-price">{{ item.total_price }} ₽</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -280,8 +297,8 @@
                     <tbody>
                         {% for item in order.parsed_items %}
                         <tr>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.price }} ₽</td>
+                            <td>{{ item.name }}</span></td>
+                            <td>{{ item.price }} ₽</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>

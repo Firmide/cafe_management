@@ -44,6 +44,59 @@
         color: #6c757d;
         margin-bottom: 1rem;
     }
+    
+    /* ========== МОБИЛЬНЫЕ СТИЛИ ========== */
+    @media (max-width: 768px) {
+        .card {
+            border-radius: 0 !important;
+            margin: 0 -1rem;
+            border-left: none !important;
+            border-right: none !important;
+            box-shadow: none !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .card:first-child {
+            margin-top: -1rem;
+        }
+        
+        .card-header {
+            border-radius: 0 !important;
+        }
+        
+        .btn {
+            padding: 14px !important;
+            font-size: 1.1rem !important;
+            width: 100%;
+            border-radius: 50px !important;
+        }
+        
+        .container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        h1 {
+            padding: 0 1rem;
+        }
+        
+        .empty-history {
+            margin: 0 1rem;
+            border-radius: 16px !important;
+        }
+        
+        .loading {
+            padding: 2rem 1rem;
+        }
+        
+        .list-group-item {
+            padding: 1rem !important;
+        }
+        
+        .btn-outline-primary {
+            margin-top: 0.5rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -73,6 +126,7 @@
     // Функция для загрузки деталей заказа
     async function loadOrderDetails(orderId) {
         try {
+            // Используем правильный URL для API
             const response = await fetch(`/api/order/${orderId}/`);
             const data = await response.json();
             return data.success ? data.order : null;
@@ -80,6 +134,11 @@
             console.error('Ошибка загрузки заказа #' + orderId, error);
             return null;
         }
+    }
+    
+    // Функция для форматирования цены
+    function formatPrice(price) {
+        return Number(price).toFixed(0) + ' ₽';
     }
     
     // Функция для отображения всех заказов
@@ -97,7 +156,7 @@
             return;
         }
         
-        let html = '<div class="row">';
+        let html = '<div class="row g-0">';
         let loadedCount = 0;
         
         // Загружаем заказы в обратном порядке (сначала новые)
@@ -108,8 +167,8 @@
             if (order) {
                 loadedCount++;
                 html += `
-                    <div class="col-md-6 mb-4">
-                        <div class="card order-card shadow-sm" onclick="window.location.href='/order/${order.id}/'">
+                    <div class="col-12 mb-3">
+                        <div class="card order-card" onclick="window.location.href='/order/${order.id}/'">
                             <div class="card-header 
                                 ${order.status === 'в ожидании' ? 'bg-warning' : 
                                   order.status === 'готово' ? 'bg-info' : 
@@ -139,18 +198,18 @@
                                             <span>
                                                 <strong>${item.name}</strong>
                                                 <br>
-                                                <small class="text-muted">${item.quantity} x ${item.price} ₽</small>
+                                                <small class="text-muted">${item.quantity} x ${formatPrice(item.price)}</small>
                                             </span>
-                                            <span class="fw-bold text-success">${item.total} ₽</span>
+                                            <span class="fw-bold text-success">${formatPrice(item.total)}</span>
                                         </div>
                                     `).join('')}
                                     <div class="list-group-item d-flex justify-content-between align-items-center fw-bold">
                                         <span>Итого:</span>
-                                        <span class="text-success">${order.total_price} ₽</span>
+                                        <span class="text-success">${formatPrice(order.total_price)}</span>
                                     </div>
                                 </div>
                                 
-                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); window.location.href='/order/${order.id}/'">
+                                <button class="btn btn-outline-primary btn-sm w-100" onclick="event.stopPropagation(); window.location.href='/order/${order.id}/'">
                                     👁️ Посмотреть статус
                                 </button>
                             </div>

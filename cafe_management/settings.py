@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-import os  # <--- Добавь эту строку
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +26,11 @@ SECRET_KEY = "django-insecure-vo0w$rlp1_yw!a)+^%q)z)g^xq1c!2fpz*ttd%vitii90qhs*h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = ['10.20.20.10', '10.20.20.12', 'localhost', '127.0.0.1']
+=======
+ALLOWED_HOSTS = ['*']
+>>>>>>> feature/mobile-adaptive
 
 
 # Application definition
@@ -109,19 +113,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru-ru"
 
 TIME_ZONE = 'Europe/Moscow'
 USE_TZ = True
 
 USE_I18N = True
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-
-# Добавь эти строки для статических файлов (если нужно)
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -133,3 +136,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ========== НАСТРОЙКИ САЙТА (БРЕНДИНГ) ==========
+SITE_NAME = "У Артура"
+SITE_DOMAIN = "uaratura.ru"
+SITE_PHONE = "+7 (495) 123-45-67"
+SITE_ADDRESS = "Москва, ул. Поварская, 1"
+SITE_EMAIL = "info@uaratura.ru"

@@ -2,10 +2,74 @@
 
 {% block title %}Статус заказа #{{ order.id }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ========== МОБИЛЬНЫЕ СТИЛИ ========== */
+    @media (max-width: 768px) {
+        .display-1 {
+            font-size: 4rem !important;
+        }
+        
+        .card {
+            border-radius: 0 !important;
+            margin: -1rem -1rem 0 -1rem;
+            box-shadow: none !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+        
+        .card-header {
+            border-radius: 0 !important;
+            padding: 1rem !important;
+        }
+        
+        .btn {
+            padding: 14px !important;
+            font-size: 1.1rem !important;
+            width: 100%;
+            margin-bottom: 10px;
+            border-radius: 50px !important;
+        }
+        
+        .btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        .mt-4 {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        h2 {
+            font-size: 1.8rem !important;
+        }
+        
+        .list-group-item {
+            padding: 1rem !important;
+        }
+    }
+    
+    /* Общие стили */
+    .badge.bg-light {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row">
         <div class="col-md-8 offset-md-2">
+            <!-- Скрытое поле с ID заказа для JavaScript -->
+            <div id="order-info" data-order-id="{{ order.id }}" style="display: none;"></div>
+            
             <div class="card shadow">
                 <div class="card-header 
                     {% if order.status == 'в ожидании' %}bg-warning
@@ -98,8 +162,10 @@
         }
     }
     
-    // Сохраняем текущий заказ
-    saveOrderToHistory({{ order.id }});
+    // Получаем ID заказа из data-атрибута
+    const orderData = document.getElementById('order-info');
+    const orderId = parseInt(orderData.dataset.orderId);
+    saveOrderToHistory(orderId);
     
     // Автообновление каждые 10 секунд
     setTimeout(function() {
