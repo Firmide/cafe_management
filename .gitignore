@@ -1,23 +1,37 @@
-# .gitignore для Django-проекта
+# База данных
+db.sqlite3
+*.sqlite3
+
+# Медиа-файлы (фотографии блюд)
+media/
+*.jpg
+*.png
+*.jpeg
 
 # Виртуальное окружение
 venv/
+.venv/
+env/
 .env/
 
-# Папки с миграциями
-*.pyc
+# Кэш Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Pytest
+# Логи
 *.log
 
-# Базы данных SQLite
-db.sqlite3
-
-# IDE / редактор
+# IDE
 .vscode/
 .idea/
-
-# Другие временные файлы
-*.bak
 *.swp
+*.swo
+
+# Django статика (собранная)
+staticfiles/
+
+# Файлы настроек с секретами (если будут)
+.env
+*.secret
