@@ -239,15 +239,22 @@
 
 {% block content %}
 <div class="container">
+    <!-- Кнопка "Назад" вверху страницы -->
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'staff:order_list' %}" class="btn btn-outline-secondary me-3" style="border-radius: 30px;">
+            ← Назад
+        </a>
+        <h1 class="mb-0">
+            {% if order %}
+                ✏️ Редактирование заказа #{{ order.id }}
+            {% else %}
+                ➕ Новый заказ
+            {% endif %}
+        </h1>
+    </div>
+
     <div class="row">
         <div class="col-md-10 offset-md-1">
-            <h1 class="mb-4 text-center">
-                {% if order %}
-                    ✏️ Редактирование заказа #{{ order.id }}
-                {% else %}
-                    ➕ Новый заказ
-                {% endif %}
-            </h1>
 
             {% if busy_tables %}
             <div class="busy-tables-alert">

@@ -27,7 +27,7 @@
         
         input.form-control {
             padding: 14px !important;
-            font-size: 16px !important; /* чтобы не зумилось на iOS */
+            font-size: 16px !important;
             border-radius: 30px !important;
         }
         
@@ -64,6 +64,21 @@
         max-height: 300px;
         overflow-y: auto;
     }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        display: none;
+    }
+    
+    .error-message.show {
+        display: block;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -77,23 +92,7 @@
                 </div>
                 <div class="card-body">
                     
-                    {% if busy_tables %}
-                    <div class="alert alert-warning">
-                        <strong>⚠️ Занятые столы:</strong>
-                        <div class="mt-2">
-                            {% for table in busy_tables %}
-                                <span class="badge bg-danger me-1">Стол {{ table }}</span>
-                            {% endfor %}
-                        </div>
-                        <small class="d-block mt-2">Эти столы сейчас заняты. Выберите свободный стол.</small>
-                    </div>
-                    {% endif %}
-                    
-                    {% if error %}
-                    <div class="alert alert-danger">
-                        {{ error }}
-                    </div>
-                    {% endif %}
+                    <!-- Убрали большой блок с занятыми столами -->
                     
                     <div id="cart-summary" class="mb-4">
                         <h5>Ваш заказ:</h5>
@@ -108,24 +107,17 @@
                     <form method="POST" id="orderForm">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="table_number" class="form-label">Номер стола</label>
                             <input type="number" name="table_number" id="table_number" 
                                    class="form-control" min="1" required 
-                                   placeholder="Введите номер вашего стола"
-                                   {% if busy_tables %}list="available-tables"{% endif %}>
-                            {% if busy_tables %}
-                            <small class="text-muted">Доступные столы: 
-                                {% for table in busy_tables %}
-                                    {{ table }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %} - заняты
-                            </small>
-                            {% endif %}
+                                   placeholder="Введите номер вашего стола">
+                            <div id="table-error" class="error-message"></div>
                         </div>
                         
                         <input type="hidden" name="cart_data" id="cart_data">
                         
-                        <button type="submit" class="btn btn-success w-100">
+                        <button type="submit" class="btn btn-success w-100" id="submitBtn">
                             ✅ Подтвердить заказ
                         </button>
                     </form>
@@ -157,7 +149,7 @@
         html += `
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
-                    <strong>${item.name}</strong>
+                    <strong>${escapeHtml(item.name)}</strong>
                     <br>
                     <small class="text-muted">${item.quantity} x ${item.price} ₽</small>
                 </div>
@@ -172,24 +164,74 @@
     // Сохраняем данные корзины в скрытое поле
     cartData.value = JSON.stringify(cart);
     
-    // Очищаем корзину при отправке формы
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        // Устанавливаем флаг в sessionStorage, что заказ оформлен
-        sessionStorage.setItem('order_placed', 'true');
+    // Обработка отправки формы
+    const orderForm = document.getElementById('orderForm');
+    const tableInput = document.getElementById('table_number');
+    const errorDiv = document.getElementById('table-error');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Функция для экранирования HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    orderForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        // Очищаем localStorage
-        localStorage.removeItem('cart');
+        const tableNumber = tableInput.value.trim();
         
-        // Небольшая задержка для надежности
-        setTimeout(() => {
-            console.log('Корзина очищена');
-        }, 10);
+        if (!tableNumber) {
+            errorDiv.textContent = 'Введите номер стола';
+            errorDiv.classList.add('show');
+            return;
+        }
+        
+        // Блокируем кнопку, чтобы не было повторных отправок
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Проверка...';
+        
+        // Проверяем, свободен ли стол через AJAX
+        try {
+            const response = await fetch('/check-table/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ table_number: tableNumber })
+            });
+            
+            const data = await response.json();
+            
+            if (data.busy) {
+                errorDiv.textContent = `Стол ${tableNumber} уже занят. Пожалуйста, уточните номер стола.`;
+                errorDiv.classList.add('show');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Подтвердить заказ';
+            } else {
+                errorDiv.classList.remove('show');
+                // Отправляем форму
+                orderForm.submit();
+            }
+        } catch (err) {
+            console.error('Ошибка проверки стола:', err);
+            // Если проверка не удалась, всё равно отправляем форму
+            orderForm.submit();
+        }
     });
     
-    // Проверяем при загрузке страницы, был ли только что оформлен заказ
-    if (sessionStorage.getItem('order_placed')) {
-        // Убираем флаг
-        sessionStorage.removeItem('order_placed');
-    }
+    // Убираем ошибку при изменении номера стола
+    tableInput.addEventListener('input', function() {
+        errorDiv.classList.remove('show');
+    });
+    
+    // Устанавливаем флаг в sessionStorage, что заказ оформлен
+    sessionStorage.setItem('order_placed', 'true');
 </script>
 {% endblock %}

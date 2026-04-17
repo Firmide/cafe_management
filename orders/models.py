@@ -129,7 +129,7 @@ class Order(models.Model):
             return items_list
 
     def save(self, *args, **kwargs):
-        """Переопределенный save с логикой для статусов и истории"""
+        """Переопределенный save с логикой для статусов"""
         old_status = None
         if self.pk:  # Существующий заказ
             old = Order.objects.get(pk=self.pk)
@@ -145,13 +145,19 @@ class Order(models.Model):
         # Сохраняем заказ
         super().save(*args, **kwargs)
         
-        # Если статус изменился, создаем запись в истории
+        # Создаем запись в истории ТОЛЬКО если статус изменился
         if old_status and old_status != self.status:
-            OrderHistory.objects.create(
-                order=self,
+            # Проверяем, не создана ли уже запись (чтобы избежать дублей)
+            if not OrderHistory.objects.filter(
+                order=self, 
                 status=self.status,
-                comment=f"Статус изменен с '{old_status}' на '{self.status}'"
-            )
+                changed_at__gte=timezone.now() - timezone.timedelta(seconds=5)
+            ).exists():
+                OrderHistory.objects.create(
+                    order=self,
+                    status=self.status,
+                    comment=f"Статус изменен с '{old_status}' на '{self.status}'"
+                )
 
     class Meta:
         verbose_name = "Заказ"

@@ -311,8 +311,17 @@ def update_status(request, order_id):
     if request.method == 'POST':
         new_status = request.POST.get('status')
         if new_status in dict(Order.STATUS_CHOICES):
+            old_status = order.status
             order.status = new_status
             order.save()
+            
+            # Создаём запись в истории с указанием, кто изменил
+            OrderHistory.objects.create(
+                order=order,
+                status=new_status,
+                changed_by=request.user.username if request.user.is_authenticated else "Аноним",
+                comment=f"Статус изменен с '{old_status}' на '{new_status}' через панель сотрудников"
+            )
             messages.success(request, f'Статус заказа #{order.id} изменен')
     
     return redirect('staff:order_detail', order_id=order.id)

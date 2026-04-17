@@ -24,11 +24,6 @@ def menu_view(request):
 def order_create(request):
     """Создание заказа клиентом с проверкой на занятый стол"""
     
-    # Получаем список занятых столов
-    busy_tables = Order.objects.filter(
-        status__in=['в ожидании', 'готово']
-    ).values_list('table_number', flat=True).distinct()
-    
     if request.method == 'POST':
         table_number = request.POST.get('table_number')
         cart_data = request.POST.get('cart_data')
@@ -36,23 +31,24 @@ def order_create(request):
         # Проверяем, что номер стола указан
         if not table_number:
             return render(request, 'customer/order_form.html', {
-                'error': 'Укажите номер стола',
-                'busy_tables': list(busy_tables)
+                'error': 'Укажите номер стола'
             })
         
         try:
             table_number = int(table_number)
         except ValueError:
             return render(request, 'customer/order_form.html', {
-                'error': 'Номер стола должен быть числом',
-                'busy_tables': list(busy_tables)
+                'error': 'Номер стола должен быть числом'
             })
         
         # Проверяем, не занят ли стол
+        busy_tables = Order.objects.filter(
+            status__in=['в ожидании', 'готово']
+        ).values_list('table_number', flat=True).distinct()
+        
         if table_number in busy_tables:
             return render(request, 'customer/order_form.html', {
-                'error': f'Стол {table_number} уже занят. Пожалуйста, выберите другой стол.',
-                'busy_tables': list(busy_tables)
+                'error': f'Стол {table_number} уже занят. Пожалуйста, уточните номер стола.'
             })
         
         # Получаем данные корзины
@@ -88,15 +84,10 @@ def order_create(request):
         # Сохраняем номер стола в сессии для истории заказов
         request.session['last_table'] = table_number
         
-        # Очищаем корзину
-        # Мы очистим на клиенте через JavaScript
-        
         return redirect('customer:order_status', order_id=order.id)
     
-    # GET запрос - показываем форму со списком занятых столов
-    return render(request, 'customer/order_form.html', {
-        'busy_tables': list(busy_tables)
-    })
+    # GET запрос - показываем форму
+    return render(request, 'customer/order_form.html')
 
 
 def order_status(request, order_id):
@@ -106,8 +97,9 @@ def order_status(request, order_id):
 
 
 def my_orders(request):
-    """Просмотр истории заказов - теперь через localStorage"""
+    """Просмотр истории заказов - через localStorage"""
     return render(request, 'customer/my_orders.html')
+
 
 def cart_page(request):
     """Страница корзины"""
@@ -167,3 +159,26 @@ def api_add_to_cart(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def check_table(request):
+    """Проверка, свободен ли стол (AJAX)"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            table_number = data.get('table_number')
+            
+            if table_number:
+                busy = Order.objects.filter(
+                    table_number=table_number,
+                    status__in=['в ожидании', 'готово']
+                ).exists()
+                
+                return JsonResponse({'busy': busy})
+            else:
+                return JsonResponse({'busy': False})
+        except Exception as e:
+            return JsonResponse({'busy': False, 'error': str(e)})
+    
+    return JsonResponse({'busy': False})
