@@ -24,13 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-vo0w$rlp1_yw!a)+^%q)z)g^xq1c!2fpz*ttd%vitii90qhs*h"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-<<<<<<< HEAD
-ALLOWED_HOSTS = ['10.20.20.10', '10.20.20.12', 'localhost', '127.0.0.1']
-=======
 ALLOWED_HOSTS = ['*']
->>>>>>> feature/mobile-adaptive
 
 
 # Application definition
@@ -140,7 +136,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ========== НАСТРОЙКИ САЙТА (БРЕНДИНГ) ==========
 SITE_NAME = "У Артура"
-SITE_DOMAIN = "uaratura.ru"
+SITE_DOMAIN = "uartura.ru"
 SITE_PHONE = "+7 (495) 123-45-67"
 SITE_ADDRESS = "Москва, ул. Поварская, 1"
 SITE_EMAIL = "info@uaratura.ru"

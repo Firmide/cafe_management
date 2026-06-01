@@ -49,7 +49,6 @@ class Order(models.Model):
 
     table_number = models.IntegerField(verbose_name="Номер стола")
     
-    # ВРЕМЕННОЕ ПОЛЕ: для обратной совместимости со старыми заказами
     items = models.TextField(
         verbose_name="Список блюд (старый формат)", 
         blank=True,

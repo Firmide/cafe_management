@@ -4,7 +4,7 @@ from . import views
 app_name = 'staff'
 
 urlpatterns = [
-    # Авторизация
+    # Авторизация (кастомная страница входа)
     path('login/', views.staff_login, name='login'),
     path('logout/', views.staff_logout, name='logout'),
     

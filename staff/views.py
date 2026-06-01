@@ -3,22 +3,18 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib import messages
-from django.core.paginator import Paginator  # Добавь эту строку
-from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from orders.models import Order, Item, OrderItem, OrderHistory
 from .forms import (
     StaffOrderForm, StaffOrderItemCreateFormSet, 
     StaffOrderItemEditFormSet, MenuItemForm
 )
 
-# Все view для сотрудников требуют авторизации
-# @login_required
 
 def staff_login(request):
-    """Вход для сотрудников"""
+    """Кастомная страница входа для сотрудников"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -26,9 +22,11 @@ def staff_login(request):
         
         if user is not None:
             login(request, user)
-            return redirect('staff:dashboard')
+            # Перенаправляем на дашборд или на страницу, указанную в GET-параметре next
+            next_url = request.GET.get('next', 'staff:dashboard')
+            return redirect(next_url)
         else:
-            return render(request, 'staff/login.html', {'error': 'Неверное имя пользователя или пароль'})
+            return render(request, 'staff/login.html', {'error': 'Неверный логин или пароль'})
     
     return render(request, 'staff/login.html')
 
@@ -37,6 +35,7 @@ def staff_logout(request):
     """Выход из системы"""
     logout(request)
     return redirect('staff:login')
+
 
 @login_required(login_url='staff:login')
 def dashboard(request):
@@ -191,7 +190,7 @@ def order_list(request):
         'orders': page_obj,
         'page_obj': page_obj,
         'is_paginated': page_obj.has_other_pages(),
-        'paid_orders': paid_orders,  # Отдельный список оплаченных заказов
+        'paid_orders': paid_orders,
         'query': query,
         'status_filter': status_filter,
         'status_choices': Order.STATUS_CHOICES,
@@ -255,6 +254,7 @@ def order_create(request):
         'title': 'Новый заказ',
         'busy_tables': list(busy_tables),
     })
+
 
 @login_required(login_url='staff:login')
 def order_edit(request, order_id):
@@ -349,7 +349,6 @@ def menu_edit(request):
     items = Item.objects.all().order_by('category', 'name')
     
     if request.method == 'POST':
-        # Обработка массового редактирования
         for item in items:
             form = MenuItemForm(request.POST, instance=item, prefix=f'item_{item.id}')
             if form.is_valid():
@@ -357,7 +356,6 @@ def menu_edit(request):
         messages.success(request, 'Меню обновлено')
         return redirect('staff:menu_view')
     
-    # Создаем формы для каждого элемента
     forms = []
     for item in items:
         forms.append(MenuItemForm(instance=item, prefix=f'item_{item.id}'))
