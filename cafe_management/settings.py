@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-vo0w$rlp1_yw!a)+^%q)z)g^xq1c!2fpz*ttd%vitii90qhs*h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['uartura.pythonanywhere.com', 'www.uartura.pythonanywhere.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
